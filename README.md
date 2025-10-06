@@ -1030,5 +1030,3 @@ http://localhost:3000/graphql/try
 - [ ] Visit page and verify component renders
 
 ---
-
-**End of Nitro Workflow Guide**
