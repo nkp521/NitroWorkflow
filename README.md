@@ -150,9 +150,6 @@ bin/rails db:migrate #Run migration in the umbrella to build the dev database
 ```bash
 # Check migration status
 bin/cobra accounting schema:version
-
-# Rollback if needed
-bin/cobra accounting schema:rollback
 ```
 
 ---
