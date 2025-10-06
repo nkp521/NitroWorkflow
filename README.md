@@ -867,39 +867,13 @@ Accounting::AccountingNotes.all # Wrong! (plural)
 Accounting::Note.all            # Correct (singular, component prefix in namespace)
 ```
 
-### ❌ Wrong namespace for relationships
-
-```ruby
-# Wrong - Projects component doesn't have ProjectType
-belongs_to :project, ::Projects::Graphql::ProjectType
-
-# Correct - ProjectType lives in CoreModels
-belongs_to :project, ::CoreModels::Graphql::ProjectType
-```
-
-**How to find correct namespace:**
-
-```bash
-grep -r "class ProjectType" components/*/app/graphql/
-# Shows: components/core_models/app/graphql/core_models/graphql/project_type.rb
-```
-
+````
 ### ❌ Forgot to restart server
 
 - GraphQL changes require restart
 - Schema loads once at boot
 - Models/controllers hot-reload, GraphQL doesn't
 
-### ❌ Wrong foreign key type
-
-```ruby
-# Wrong - creates bigint
-t.references :project
-
-# Correct for Nitro - creates integer
-t.integer :project_id, null: false
-add_foreign_key :accounting_notes, :projects
-```
 
 ### ❌ Field name doesn't match column
 
@@ -907,7 +881,7 @@ add_foreign_key :accounting_notes, :projects
 # Database has: t.text :content
 field :note_text, String  # Wrong! No column named note_text
 field :content, String    # Correct
-```
+````
 
 ### ❌ File in wrong location
 
