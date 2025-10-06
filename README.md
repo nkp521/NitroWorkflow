@@ -102,8 +102,6 @@ class CreateAccountingNotes < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_foreign_key :accounting_notes, :projects
-    add_foreign_key :accounting_notes, :users
     add_index :accounting_notes, :project_id
     add_index :accounting_notes, :user_id
   end
@@ -121,11 +119,6 @@ end
 
   - File: `create_accounting_notes.rb`
   - Class: `CreateAccountingNotes`
-
-- **Explicit foreign keys:**
-
-  - `add_foreign_key` enforces DB integrity
-  - Prevents orphaned records
 
 - **Indexes for performance:**
   - `add_index` speeds up lookups
