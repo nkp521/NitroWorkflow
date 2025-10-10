@@ -18,7 +18,12 @@
   - [Step 3: Update TypeScript Config (optional?)](#step-3-update-typescript-config)
   - [Step 4: Create Vite Entrypoint](#step-4-create-vite-entrypoint)
   - [Step 5: Load in ERB View](#step-5-load-in-erb-view)
-  - [Step 6: Test React Component](#step-6-test-react-component)
+- [Using GraphQL in React Components](#using-graphql-in-react-components)
+  - [Step 1: Receive Props from ERB](#step-1-receive-props-from-erb)
+  - [Step 2: Create Types File](#step-2-create-types-file)
+  - [Step 3: Use Query to Fetch Data](#step-3-use-query-to-fetch-data)
+  - [Step 4: Use Mutation to Create/Update Data](#step-4-use-mutation-to-createupdate-data)
+  - [Step 5: Test GraphQL Integration](#step-5-test-graphql-integration)
 - [Common Mistakes](#common-mistakes)
 - [Quick Reference](#quick-reference)
 
@@ -575,11 +580,11 @@ Navigate to: `http://localhost:3000/graphql/try`
 - `index.tsx` - Main component file
 
 ```tsx
-import React from "react";
+import React from "react"
 
-const AccountingNoteApp = () => <div> Capstone Progress </div>;
+const AccountingNoteApp = () => <div> Capstone Progress </div>
 
-export default AccountingNoteApp;
+export default AccountingNoteApp
 ```
 
 **Key conventions:**
@@ -621,11 +626,11 @@ export default AccountingNoteApp;
 - `index.ts` - Main export file as per package.json
 
 ```typescript
-export { default as VolumeRangeApp } from "./VolumeRangeApp";
-export { default as GrossMarginApp } from "./GrossMarginApp";
-export { default as ImpersonateApp } from "./ImpersonateApp";
-export { default as AcknowledgementFormApp } from "./AcknowledgementFormApp";
-export { default as AccountingNoteApp } from "./AccountingNoteApp";
+export { default as VolumeRangeApp } from "./VolumeRangeApp"
+export { default as GrossMarginApp } from "./GrossMarginApp"
+export { default as ImpersonateApp } from "./ImpersonateApp"
+export { default as AcknowledgementFormApp } from "./AcknowledgementFormApp"
+export { default as AccountingNoteApp } from "./AccountingNoteApp"
 ```
 
 **Key conventions:**
@@ -700,12 +705,12 @@ export { default as AccountingNoteApp } from "./AccountingNoteApp";
 - `accounting_note.ts` - Entrypoint file (snake_case)
 
 ```typescript
-import nitroReact from "@powerhome/nitro_react/renderer";
-import { AccountingNoteApp } from "@powerhome/accounting";
+import nitroReact from "@powerhome/nitro_react/renderer"
+import { AccountingNoteApp } from "@powerhome/accounting"
 
 nitroReact.register({
   AccountingNoteApp,
-});
+})
 ```
 
 **Key conventions:**
@@ -854,6 +859,569 @@ Replace `3580709` with an actual project ID in your database.
 4. Verify component is included in `tsconfig.json`
 5. Verify entrypoint registers component correctly
 6. Restart server (server restart may be needed after new entrypoint)
+
+---
+
+## Using GraphQL in React Components
+
+### Step 1: Receive Props from ERB
+
+**Props are passed from Rails ERB views to React components using the `render_app` helper.**
+
+**From ERB view:**
+
+```erb
+<%= render_app "AccountingNoteApp", { projectId: @project.id } %>
+```
+
+**To React component:**
+
+```tsx
+const AccountingNoteApp = ({ projectId }: AccountingNoteAppProps) => {
+  // Use projectId here
+}
+```
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/index.tsx`
+
+**Path breakdown:**
+
+- `components/accounting/` - Your component
+- `app/javascript/` - JavaScript/React folder
+- `AccountingNoteApp/` - Component name folder
+- `index.tsx` - Main component file
+
+```tsx
+import React from "react"
+import { AccountingNoteAppProps } from "./types"
+
+const AccountingNoteApp = ({ projectId }: AccountingNoteAppProps) => {
+  return <div>{/* Component content */}</div>
+}
+
+export default AccountingNoteApp
+```
+
+**Key conventions:**
+
+- **Destructure props:**
+
+  - Format: `({ propName }: ComponentProps)`
+  - TypeScript validates prop types
+  - Enables autocomplete
+
+- **Type annotation:**
+
+  - Use component-specific props type
+  - Import from `./types`
+  - Ensures type safety
+
+- **Props flow down:**
+  - Parent receives from ERB
+  - Parent passes to children
+  - One-way data flow
+
+---
+
+### Step 2: Create Types File
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/types.ts`
+
+**Path breakdown:**
+
+- `components/accounting/` - Your component
+- `app/javascript/` - JavaScript/React folder
+- `AccountingNoteApp/` - Component folder
+- `types.ts` - TypeScript types file
+
+```typescript
+export type AccountingNoteAppProps = {
+  projectId: number
+}
+
+export type NoteFormType = {
+  content?: string
+  projectId: number
+}
+
+export type AccountingNoteDisplay = {
+  id: number
+  content: string
+  user: {
+    name: string
+  }
+  userTitle: {
+    name: string
+  }
+  createdAt: string
+}
+```
+
+**Key conventions:**
+
+- **Props type naming:**
+
+  - Format: `[ComponentName]Props`
+  - Example: `AccountingNoteAppProps`
+  - Matches component name exactly
+
+- **Form type naming:**
+
+  - Format: `[Feature]FormType`
+  - Example: `NoteFormType`
+  - Matches mutation input structure
+
+- **Display type naming:**
+
+  - Format: `[Feature]Display`
+  - Example: `AccountingNoteDisplay`
+  - Matches GraphQL query response structure
+
+- **Export all types:**
+  - Use `export type` for each
+  - Makes types reusable
+  - Centralized definitions
+
+**Type structure:**
+
+- **Props from ERB:** Simple types (number, string, boolean)
+- **Form types:** Optional fields with `?`, matches mutation input
+- **Display types:** Nested objects, matches GraphQL query response
+
+---
+
+### Step 3: Use Query to Fetch Data
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/DisplayAccountingNotes/index.tsx`
+
+**Path breakdown:**
+
+- `components/accounting/` - Your component
+- `app/javascript/` - JavaScript/React folder
+- `AccountingNoteApp/` - Parent component folder
+- `DisplayAccountingNotes/` - Child component folder
+- `index.tsx` - Component file
+
+#### Create GraphQL Query
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/graphql.ts`
+
+**Path breakdown:**
+
+- Same folder as component
+- `graphql.ts` - GraphQL queries and mutations file
+
+```typescript
+import gql from "graphql-tag"
+
+export const ACCOUNTING_NOTES_QUERY = gql`
+  query($projectId: Int!) {
+    accountingNotes(projectId: $projectId) {
+      id
+      content
+      user {
+        name
+      }
+      userTitle {
+        name
+      }
+      createdAt
+    }
+  }
+`
+```
+
+**Key conventions:**
+
+- **Import gql:**
+
+  - `import gql from "graphql-tag"`
+  - Required for GraphQL syntax
+  - Parses GraphQL strings
+
+- **Query naming:**
+
+  - Format: `[FEATURE]_QUERY` (SCREAMING_SNAKE_CASE)
+  - Example: `ACCOUNTING_NOTES_QUERY`
+  - Export as constant
+
+- **Query structure:**
+
+  - Define variables: `($projectId: Int!)`
+  - Call query: `accountingNotes(projectId: $projectId)`
+  - Must match backend query name
+
+- **Field selection:**
+  - Only request fields you need
+  - Match your TypeScript display type
+  - Include nested relationships (user, userTitle)
+
+**Matches backend query created earlier:**
+
+From [Creating GraphQL Queries](#creating-graphql-queries) section:
+
+- Backend field: `:accounting_notes` → GraphQL: `accountingNotes`
+- Backend argument: `:project_id` → GraphQL: `projectId`
+- Backend resolver: `AccountingNotesQuery` with `resolve(project_id:)`
+- Returns: Array of `AccountingNoteType` objects
+
+**Name conversion:**
+
+| Backend (Ruby)            | Frontend (GraphQL)         |
+| ------------------------- | -------------------------- |
+| `field :accounting_notes` | `accountingNotes`          |
+| `argument :project_id`    | `projectId: $projectId`    |
+| `Integer`                 | `Int!`                     |
+| `resolve(project_id:)`    | `variables: { projectId }` |
+
+#### Use Query in Component
+
+```tsx
+import React from "react"
+import { useQuery } from "@apollo/react-hooks"
+import { ACCOUNTING_NOTES_QUERY } from "../graphql"
+import { AccountingNoteAppProps, AccountingNoteDisplay } from "../types"
+
+const DisplayAccountingNotes = ({ projectId }: AccountingNoteAppProps) => {
+  const { loading, error, data } = useQuery(ACCOUNTING_NOTES_QUERY, {
+    variables: { projectId },
+  })
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error loading notes</div>
+
+  const notes: AccountingNoteDisplay[] = data?.accountingNotes || []
+
+  return (
+    <div>
+      {notes.map(note => (
+        <div key={note.id}>
+          <p>{note.content}</p>
+          <small>
+            {note.user.name} - {note.createdAt}
+          </small>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default DisplayAccountingNotes
+```
+
+**Key conventions:**
+
+- **Import useQuery:**
+
+  - `from "@apollo/react-hooks"`
+  - Apollo's React hook
+  - Handles data fetching
+
+- **Import query:**
+
+  - Import from `../graphql`
+  - Use constant name
+  - Type-safe query
+
+- **Destructure response:**
+
+  - `{ loading, error, data }`
+  - Standard Apollo pattern
+  - All queries return these
+
+- **Pass variables:**
+
+  - `variables: { projectId }`
+  - Matches query definition `($projectId: Int!)`
+  - Converts to `project_id:` in backend resolver
+  - **Must send all required arguments** - backend expects `project_id` (required: true)
+  - **Must match types** - backend expects Integer, send number
+  - **Names auto-convert** - `projectId` → `project_id`
+
+- **Handle states:**
+
+  - Check `loading` first
+  - Check `error` second
+  - Render `data` last
+
+- **Type the data:**
+  - `const notes: AccountingNoteDisplay[]`
+  - Use display type from types.ts
+  - Array matches query return type
+
+**Data flow:**
+
+```
+React: { projectId: 3879586 }
+  ↓
+GraphQL: { "projectId": 3879586 }
+  ↓
+Backend Resolver: project_id: 3879586
+  ↓
+Query: Accounting::Note.where(project_id: 3879586).order(created_at: :desc)
+  ↓
+Response: [{ id, content, user, ... }]
+  ↓
+React: notes: AccountingNoteDisplay[]
+```
+
+---
+
+### Step 4: Use Mutation to Create/Update Data
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/AccountingNoteForm/index.tsx`
+
+**Path breakdown:**
+
+- `components/accounting/` - Your component
+- `app/javascript/` - JavaScript/React folder
+- `AccountingNoteApp/` - Parent component folder
+- `AccountingNoteForm/` - Child component folder
+- `index.tsx` - Component file
+
+#### Add Mutation to GraphQL File
+
+**Location:** `components/accounting/app/javascript/AccountingNoteApp/graphql.ts`
+
+**Add to existing graphql.ts file:**
+
+```typescript
+export const CREATE_ACCOUNTING_NOTE_MUTATION = gql`
+  mutation CreateAccountingNote($input: AccountingNoteInput!) {
+    createAccountingNote(input: $input) {
+      accountingNote {
+        id
+        content
+        createdAt
+      }
+      errors
+    }
+  }
+`
+```
+
+**Connects to backend mutation from [Creating GraphQL Queries](#creating-graphql-queries):**
+
+- Backend: `field :create_accounting_note` → React: `createAccountingNote`
+- Backend: `argument :input` with `AccountingNoteInput` → React: `$input: AccountingNoteInput!`
+- Backend: `resolve(input:)` receives `{ project_id, content, user_id }` → React: `{ projectId, content, userId }`
+- Name conversion: `project_id` → `projectId`, `user_id` → `userId`
+
+#### Use Mutation in Component
+
+```tsx
+import React, { useState } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { useMutation } from "@apollo/react-hooks"
+import {
+  CREATE_ACCOUNTING_NOTE_MUTATION,
+  ACCOUNTING_NOTES_QUERY,
+} from "../graphql"
+import { NoteFormType, AccountingNoteAppProps } from "../types"
+
+const AccountingNoteForm = ({ projectId }: AccountingNoteAppProps) => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const { control, handleSubmit, reset } = useForm<NoteFormType>({
+    defaultValues: {
+      projectId: projectId,
+      content: "",
+    },
+  })
+
+  const [createAccountingNote] = useMutation(CREATE_ACCOUNTING_NOTE_MUTATION, {
+    onError: error => setErrorMessage(error.message),
+    onCompleted: () => {
+      reset()
+      setErrorMessage(null)
+    },
+  })
+
+  const onSubmit = (data: NoteFormType) => {
+    setErrorMessage(null)
+    createAccountingNote({
+      variables: { input: data },
+      refetchQueries: [
+        { query: ACCOUNTING_NOTES_QUERY, variables: { projectId } },
+      ],
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {errorMessage && <div>{errorMessage}</div>}
+      <Controller
+        control={control}
+        name="content"
+        render={({ field }) => <textarea {...field} />}
+        rules={{ required: true, maxLength: 500 }}
+      />
+      <button type="submit">Submit</button>
+    </form>
+  )
+}
+
+export default AccountingNoteForm
+```
+
+**Key conventions:**
+
+- **Import useMutation:**
+
+  - `from "@apollo/react-hooks"`
+  - Apollo's mutation hook
+  - Handles data updates
+
+- **Import mutation and query:**
+
+  - Mutation to create data
+  - Query to refetch after create
+  - Both from `../graphql`
+
+- **Setup mutation:**
+
+  - `const [createAccountingNote] = useMutation(...)`
+  - Returns function to call
+  - Configure callbacks
+
+- **onError callback:**
+
+  - Runs when mutation fails
+  - Receives error object
+  - Set error state for display
+  - Catches backend validation errors
+
+- **onCompleted callback:**
+
+  - Runs when mutation succeeds
+  - No error parameter
+  - Reset form, clear errors
+
+- **Call mutation:**
+
+  - `createAccountingNote({ variables: { input: data } })`
+  - Pass form data as `input`
+  - Matches mutation definition `($input: AccountingNoteInput!)`
+
+- **Input structure:**
+
+  - `{ input: { projectId: 3879586, content: "..." } }`
+  - Matches backend input type
+  - Field names convert: `projectId` → `project_id`
+  - **Must send all required fields** - backend expects `content`, `project_id`, `user_id`
+  - **Must match types** - backend expects String for content, Integer for IDs
+  - **Must nest in input** - backend expects `input:` argument
+
+- **refetchQueries:**
+
+  - Array of queries to re-run after mutation succeeds
+  - Updates UI automatically with new data
+  - Pass same variables as original query
+  - Ensures list shows new note without manual refresh
+  - Example: After creating note, refetch notes list to display it
+
+- **Form typing:**
+  - `useForm<NoteFormType>`
+  - Type-safe form data
+  - Validates structure matches mutation input
+
+**Data flow:**
+
+```
+Form Submit: { projectId: 3879586, content: "Test" }
+  ↓
+GraphQL Mutation: { "input": { "projectId": 3879586, "content": "Test" } }
+  ↓
+Backend Mutation Resolver: input: { project_id: 3879586, content: "Test" }
+  ↓
+Model Validation: Accounting::Note validates presence, length
+  ↓
+Success: { accountingNote: { id, content, ... }, errors: nil }
+OR
+Failure: { accountingNote: nil, errors: ["Content is too long"] }
+  ↓
+React: onCompleted() or onError()
+  ↓
+UI: Show success or display error message
+```
+
+**Error handling:**
+
+- **GraphQL errors:** Network issues, syntax errors → `onError`
+- **Validation errors:** Model validations → `onError` with message
+- **Display errors:** Set state, show to user
+- **Clear errors:** Before new submission, after success
+
+---
+
+### Step 5: Test GraphQL Integration
+
+**In browser:**
+
+1. **Open DevTools (F12)**
+2. **Go to Network tab**
+3. **Filter by "graphql"**
+4. **Perform action** (load page, submit form)
+5. **Check requests:**
+   - Query sent with correct variables
+   - Mutation sent with correct input
+   - Response contains expected data
+
+**Check query:**
+
+```
+Request URL: /graphql
+Request Method: POST
+Request Payload:
+{
+  "query": "query ($projectId: Int!) { accountingNotes(...) }",
+  "variables": { "projectId": 3879586 }
+}
+
+Response:
+{
+  "data": {
+    "accountingNotes": [
+      { "id": "1", "content": "Test", ... }
+    ]
+  }
+}
+```
+
+**Check mutation:**
+
+```
+Request Payload:
+{
+  "query": "mutation CreateAccountingNote($input: ...) { ... }",
+  "variables": {
+    "input": {
+      "projectId": 3879586,
+      "content": "Test note"
+    }
+  }
+}
+
+Response:
+{
+  "data": {
+    "createAccountingNote": {
+      "accountingNote": { "id": "2", "content": "Test note", ... },
+      "errors": null
+    }
+  }
+}
+```
+
+**Verify:**
+
+- ✅ Query runs on component mount
+- ✅ Data displays correctly
+- ✅ Mutation runs on form submit
+- ✅ UI updates after mutation (refetch works)
+- ✅ Errors display when they occur
+- ✅ Loading states show during requests
+- ✅ Backend validations trigger errors in React
 
 ---
 
