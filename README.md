@@ -139,7 +139,7 @@ end
 
 ```bash
 cd nitro-web  # Main app directory
-bin/cobra accounting schema  # Run migrations for accounting component from umbrella
+bin/cobra cmd accounting schema  # Run migrations for accounting component from umbrella
 bin/rails db:migrate #Run migration in the umbrella to build the dev database
 ```
 
@@ -580,11 +580,11 @@ Navigate to: `http://localhost:3000/graphql/try`
 - `index.tsx` - Main component file
 
 ```tsx
-import React from "react"
+import React from "react";
 
-const AccountingNoteApp = () => <div> Capstone Progress </div>
+const AccountingNoteApp = () => <div> Capstone Progress </div>;
 
-export default AccountingNoteApp
+export default AccountingNoteApp;
 ```
 
 **Key conventions:**
@@ -626,11 +626,11 @@ export default AccountingNoteApp
 - `index.ts` - Main export file as per package.json
 
 ```typescript
-export { default as VolumeRangeApp } from "./VolumeRangeApp"
-export { default as GrossMarginApp } from "./GrossMarginApp"
-export { default as ImpersonateApp } from "./ImpersonateApp"
-export { default as AcknowledgementFormApp } from "./AcknowledgementFormApp"
-export { default as AccountingNoteApp } from "./AccountingNoteApp"
+export { default as VolumeRangeApp } from "./VolumeRangeApp";
+export { default as GrossMarginApp } from "./GrossMarginApp";
+export { default as ImpersonateApp } from "./ImpersonateApp";
+export { default as AcknowledgementFormApp } from "./AcknowledgementFormApp";
+export { default as AccountingNoteApp } from "./AccountingNoteApp";
 ```
 
 **Key conventions:**
@@ -705,12 +705,12 @@ export { default as AccountingNoteApp } from "./AccountingNoteApp"
 - `accounting_note.ts` - Entrypoint file (snake_case)
 
 ```typescript
-import nitroReact from "@powerhome/nitro_react/renderer"
-import { AccountingNoteApp } from "@powerhome/accounting"
+import nitroReact from "@powerhome/nitro_react/renderer";
+import { AccountingNoteApp } from "@powerhome/accounting";
 
 nitroReact.register({
   AccountingNoteApp,
-})
+});
 ```
 
 **Key conventions:**
@@ -879,7 +879,7 @@ Replace `3580709` with an actual project ID in your database.
 ```tsx
 const AccountingNoteApp = ({ projectId }: AccountingNoteAppProps) => {
   // Use projectId here
-}
+};
 ```
 
 **Location:** `components/accounting/app/javascript/AccountingNoteApp/index.tsx`
@@ -892,14 +892,14 @@ const AccountingNoteApp = ({ projectId }: AccountingNoteAppProps) => {
 - `index.tsx` - Main component file
 
 ```tsx
-import React from "react"
-import { AccountingNoteAppProps } from "./types"
+import React from "react";
+import { AccountingNoteAppProps } from "./types";
 
 const AccountingNoteApp = ({ projectId }: AccountingNoteAppProps) => {
-  return <div>{/* Component content */}</div>
-}
+  return <div>{/* Component content */}</div>;
+};
 
-export default AccountingNoteApp
+export default AccountingNoteApp;
 ```
 
 **Key conventions:**
@@ -936,25 +936,25 @@ export default AccountingNoteApp
 
 ```typescript
 export type AccountingNoteAppProps = {
-  projectId: number
-}
+  projectId: number;
+};
 
 export type NoteFormType = {
-  content?: string
-  projectId: number
-}
+  content?: string;
+  projectId: number;
+};
 
 export type AccountingNoteDisplay = {
-  id: number
-  content: string
+  id: number;
+  content: string;
   user: {
-    name: string
-  }
+    name: string;
+  };
   userTitle: {
-    name: string
-  }
-  createdAt: string
-}
+    name: string;
+  };
+  createdAt: string;
+};
 ```
 
 **Key conventions:**
@@ -1012,10 +1012,10 @@ export type AccountingNoteDisplay = {
 - `graphql.ts` - GraphQL queries and mutations file
 
 ```typescript
-import gql from "graphql-tag"
+import gql from "graphql-tag";
 
 export const ACCOUNTING_NOTES_QUERY = gql`
-  query($projectId: Int!) {
+  query ($projectId: Int!) {
     accountingNotes(projectId: $projectId) {
       id
       content
@@ -1028,7 +1028,7 @@ export const ACCOUNTING_NOTES_QUERY = gql`
       createdAt
     }
   }
-`
+`;
 ```
 
 **Key conventions:**
@@ -1077,24 +1077,24 @@ From [Creating GraphQL Queries](#creating-graphql-queries) section:
 #### Use Query in Component
 
 ```tsx
-import React from "react"
-import { useQuery } from "@apollo/react-hooks"
-import { ACCOUNTING_NOTES_QUERY } from "../graphql"
-import { AccountingNoteAppProps, AccountingNoteDisplay } from "../types"
+import React from "react";
+import { useQuery } from "@apollo/react-hooks";
+import { ACCOUNTING_NOTES_QUERY } from "../graphql";
+import { AccountingNoteAppProps, AccountingNoteDisplay } from "../types";
 
 const DisplayAccountingNotes = ({ projectId }: AccountingNoteAppProps) => {
   const { loading, error, data } = useQuery(ACCOUNTING_NOTES_QUERY, {
     variables: { projectId },
-  })
+  });
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error loading notes</div>
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading notes</div>;
 
-  const notes: AccountingNoteDisplay[] = data?.accountingNotes || []
+  const notes: AccountingNoteDisplay[] = data?.accountingNotes || [];
 
   return (
     <div>
-      {notes.map(note => (
+      {notes.map((note) => (
         <div key={note.id}>
           <p>{note.content}</p>
           <small>
@@ -1103,10 +1103,10 @@ const DisplayAccountingNotes = ({ projectId }: AccountingNoteAppProps) => {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-export default DisplayAccountingNotes
+export default DisplayAccountingNotes;
 ```
 
 **Key conventions:**
@@ -1197,7 +1197,7 @@ export const CREATE_ACCOUNTING_NOTE_MUTATION = gql`
       errors
     }
   }
-`
+`;
 ```
 
 **Connects to backend mutation from [Creating GraphQL Queries](#creating-graphql-queries):**
@@ -1210,42 +1210,42 @@ export const CREATE_ACCOUNTING_NOTE_MUTATION = gql`
 #### Use Mutation in Component
 
 ```tsx
-import React, { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { useMutation } from "@apollo/react-hooks"
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { useMutation } from "@apollo/react-hooks";
 import {
   CREATE_ACCOUNTING_NOTE_MUTATION,
   ACCOUNTING_NOTES_QUERY,
-} from "../graphql"
-import { NoteFormType, AccountingNoteAppProps } from "../types"
+} from "../graphql";
+import { NoteFormType, AccountingNoteAppProps } from "../types";
 
 const AccountingNoteForm = ({ projectId }: AccountingNoteAppProps) => {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { control, handleSubmit, reset } = useForm<NoteFormType>({
     defaultValues: {
       projectId: projectId,
       content: "",
     },
-  })
+  });
 
   const [createAccountingNote] = useMutation(CREATE_ACCOUNTING_NOTE_MUTATION, {
-    onError: error => setErrorMessage(error.message),
+    onError: (error) => setErrorMessage(error.message),
     onCompleted: () => {
-      reset()
-      setErrorMessage(null)
+      reset();
+      setErrorMessage(null);
     },
-  })
+  });
 
   const onSubmit = (data: NoteFormType) => {
-    setErrorMessage(null)
+    setErrorMessage(null);
     createAccountingNote({
       variables: { input: data },
       refetchQueries: [
         { query: ACCOUNTING_NOTES_QUERY, variables: { projectId } },
       ],
-    })
-  }
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -1258,10 +1258,10 @@ const AccountingNoteForm = ({ projectId }: AccountingNoteAppProps) => {
       />
       <button type="submit">Submit</button>
     </form>
-  )
-}
+  );
+};
 
-export default AccountingNoteForm
+export default AccountingNoteForm;
 ```
 
 **Key conventions:**
